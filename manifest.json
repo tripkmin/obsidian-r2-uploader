@@ -1,0 +1,10 @@
+{
+	"id": "r2-uploader",
+	"name": "R2 Uploader",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Upload images to CloudFlare R2 and automatically replace local image links with R2 URLs.",
+	"author": "Your Name",
+	"authorUrl": "https://github.com/yourusername",
+	"isDesktopOnly": false
+}
