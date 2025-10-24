@@ -1,64 +1,116 @@
+[한국어](README-KR.md)
+
 # R2 Uploader
 
-R2 Uploader는 Obsidian에서 CloudFlare R2에 이미지를 업로드하고 자동으로 링크를 교체하는 플러그인입니다.
+**R2 Uploader** is an Obsidian plugin that uploads images to **Cloudflare R2** and automatically replaces local links with remote ones.
 
-## 기능
+> ⚠️ This plugin is **not an officially released Obsidian plugin** — it’s a personal project currently in development.
 
-- **자동 이미지 업로드**: 클립보드에서 이미지를 붙여넣을 때 자동으로 CloudFlare R2에 업로드
-- **업로드 확인**: 업로드 전 확인 다이얼로그 (선택사항)
-- **Publish Page**: 현재 노트의 모든 로컬 이미지를 R2에 업로드하고 링크 교체
-- **유연한 경로 설정**: 날짜, 파일명 등 변수를 사용한 저장 경로 설정
-- **커스텀 도메인 지원**: R2.dev URL 또는 사용자 지정 도메인 사용
+---
 
-## 설치
+## ✨ Features
 
-1. 이 플러그인을 Obsidian의 플러그인 폴더에 복사합니다.
-2. Obsidian에서 플러그인을 활성화합니다.
-3. 설정에서 CloudFlare R2 계정 정보를 입력합니다.
+- **Automatic Image Upload**: Automatically uploads clipboard images to Cloudflare R2 when pasted
+- **Upload Confirmation**: Optional dialog before upload
+- **Publish Page**: Uploads all local images in the current note and replaces links automatically
+- **Flexible Path Variables**: Supports dynamic paths using variables like `{year}`, `{mon}`, `{day}`, `{filename}`
+- **Custom Domain Support**: Use either your `r2.dev` URL or a custom domain
 
-## 설정
+---
 
-### CloudFlare R2 설정
+## ⚙️ Installation
 
-1. **Access Key ID**: CloudFlare R2 액세스 키 ID
-2. **Secret Access Key**: CloudFlare R2 비밀 액세스 키
-3. **Endpoint**: R2 엔드포인트 URL (예: `https://account-id.r2.cloudflarestorage.com`)
-4. **Bucket Name**: R2 버킷 이름
-5. **Target Path**: 이미지 저장 경로 (변수 지원: `{year}`, `{mon}`, `{day}`, `{filename}`)
-6. **Custom Domain**: R2.dev URL 또는 사용자 지정 도메인
+1. Copy this plugin into your Obsidian plugin folder.
+2. Enable it from the Obsidian settings.
+3. Enter your Cloudflare R2 account credentials in the plugin settings.
 
-### 업로드 설정
+---
 
-- **Use image name as Alt Text**: 이미지 이름을 Alt 텍스트로 사용
-- **Update original document**: 내부 링크를 스토어 링크로 교체
-- **Ignore note properties**: 클립보드 복사 시 노트 속성 무시
-- **Show progress modal**: 업로드 진행 상황 모달 표시
-- **Confirm before upload**: 업로드 전 확인 다이얼로그 표시
+## ☁️ Cloudflare R2 Setup
 
-## 사용법
+### 1️⃣ Create a Cloudflare Account and R2 Bucket
 
-### 자동 업로드
-1. 이미지를 클립보드에 복사합니다.
-2. Obsidian 편집기에서 붙여넣기 (Ctrl+V)를 합니다.
-3. 확인 다이얼로그가 나타나면 "Upload" 또는 "Always Upload"를 선택합니다.
+1. Sign up at [Cloudflare](https://dash.cloudflare.com/sign-up).
+2. Enable **R2 Storage** in your Cloudflare dashboard.
+3. Create a new **R2 bucket** for storing images.
+
+### 2️⃣ Generate API Credentials
+
+1. Go to **R2 → Overview → Manage R2 API Tokens** in your Cloudflare dashboard.
+2. Click **Create API Token**.
+3. Grant **Read/Write** permissions.
+4. Copy the generated **Access Key ID** and **Secret Access Key**.
+
+### 3️⃣ Configure in Plugin
+
+In the plugin settings, enter the following information:
+
+| Field                 | Description                                     |
+| --------------------- | ----------------------------------------------- |
+| **Access Key ID**     | Your Cloudflare R2 access key ID                |
+| **Secret Access Key** | Your Cloudflare R2 secret access key            |
+| **Endpoint**          | `https://<account-id>.r2.cloudflarestorage.com` |
+| **Bucket Name**       | The name of your R2 bucket                      |
+| **Custom Domain**     | Optional – your `r2.dev` URL or a custom domain |
+
+---
+
+## 🧩 Plugin Settings
+
+| Setting                        | Description                                                            |
+| ------------------------------ | ---------------------------------------------------------------------- |
+| **Target Path**                | Image storage path (supports `{year}`, `{mon}`, `{day}`, `{filename}`) |
+| **Use image name as Alt Text** | Use the image filename as alt text                                     |
+| **Update original document**   | Replace local links with R2 links automatically                        |
+| **Ignore note properties**     | Ignore frontmatter/note properties when pasting                        |
+| **Show progress modal**        | Display upload progress                                                |
+| **Confirm before upload**      | Show a confirmation dialog before uploading                            |
+
+---
+
+## 🖼 Usage
+
+### Automatic Upload
+
+1. Copy an image to your clipboard.
+2. Paste it into the Obsidian editor (Ctrl+V).
+3. When prompted, choose **“Upload”** or **“Always Upload.”**
 
 ### Publish Page
-1. 명령 팔레트 (Ctrl+P)를 엽니다.
-2. "Publish Page to R2" 명령을 실행합니다.
-3. 현재 노트의 모든 로컬 이미지가 R2에 업로드되고 링크가 교체됩니다.
 
-## 개발
+1. Open the command palette (Ctrl+P).
+2. Run **“Publish Page to R2.”**
+3. All local images in the current note will be uploaded to R2, and their links will be automatically replaced.
 
-### 빌드
+---
+
+## 🧱 Development
+
+### Build
+
 ```bash
 npm run build
 ```
 
-### 개발 모드
+### Dev Mode
+
 ```bash
 npm run dev
 ```
 
-## 라이선스
+---
+
+## 🙏 Credits
+
+This plugin was heavily inspired by the following open-source projects:
+
+- [**obsidian-imgur-plugin**](https://github.com/gavvvr/obsidian-imgur-plugin)
+  → Logic for instant image uploads
+- [**obsidian-image-upload-toolkit**](https://github.com/addozhang/obsidian-image-upload-toolkit)
+  → Logic for Cloudflare R2 integration
+
+---
+
+## 📄 License
 
 MIT License
