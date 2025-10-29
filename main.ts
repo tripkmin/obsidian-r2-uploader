@@ -113,6 +113,11 @@ export default class R2UploaderPlugin extends Plugin {
     this.registerEvent(
       this.app.workspace.on('editor-paste', this.handlePasteEvent.bind(this))
     );
+
+    // Register drop event listener for automatic image upload
+    this.registerEvent(
+      this.app.workspace.on('editor-drop', this.handleDropEvent.bind(this))
+    );
   }
 
   onunload() {}
@@ -159,25 +164,60 @@ export default class R2UploaderPlugin extends Plugin {
       return;
     }
 
-    const clipboardItems = evt.clipboardData?.items;
-    if (!clipboardItems) return;
-
-    // Check if all files are images
     const files: File[] = [];
-    for (let i = 0; i < clipboardItems.length; i++) {
-      const item = clipboardItems[i];
-      if (item.type.startsWith('image/')) {
-        const file = item.getAsFile();
-        if (file) {
-          files.push(file);
+
+    // First, check clipboardData.files (used by some browsers when copying images)
+    if (evt.clipboardData?.files && evt.clipboardData.files.length > 0) {
+      for (let i = 0; i < evt.clipboardData.files.length; i++) {
+        const file = evt.clipboardData.files[i];
+        if (file.type.startsWith('image/')) {
+          // Ensure file has a proper name
+          if (!file.name || file.name === 'blob') {
+            const extension = file.type.split('/')[1] || 'png';
+            const timestamp = Date.now();
+            const newFile = new File([file], `Pasted image ${timestamp}.${extension}`, {
+              type: file.type,
+            });
+            files.push(newFile);
+          } else {
+            files.push(file);
+          }
+        }
+      }
+    }
+
+    // Also check clipboardData.items (used by other browsers/scenarios)
+    // Check items even if files were found, as some browsers may have data in both
+    const clipboardItems = evt.clipboardData?.items;
+    if (clipboardItems) {
+      for (let i = 0; i < clipboardItems.length; i++) {
+        const item = clipboardItems[i];
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            // Check if we already have this file (avoid duplicates)
+            const isDuplicate = files.some(
+              f => f.size === file.size && f.type === file.type
+            );
+            if (isDuplicate) continue;
+
+            // Ensure file has a proper name
+            if (!file.name || file.name === 'blob') {
+              const extension = item.type.split('/')[1] || 'png';
+              const timestamp = Date.now();
+              const newFile = new File([file], `Pasted image ${timestamp}.${extension}`, {
+                type: item.type,
+              });
+              files.push(newFile);
+            } else {
+              files.push(file);
+            }
+          }
         }
       }
     }
 
     if (files.length === 0) return;
-
-    // If there are non-image files, don't handle the paste event
-    if (files.length !== clipboardItems.length) return;
 
     evt.preventDefault();
 
@@ -210,6 +250,63 @@ export default class R2UploaderPlugin extends Plugin {
     }
   }
 
+  private async handleDropEvent(
+    evt: DragEvent,
+    editor: Editor,
+    markdownView: MarkdownView
+  ) {
+    if (!this.r2Uploader) {
+      new Notice('R2 Uploader not configured. Please check your settings.');
+      return;
+    }
+
+    const files: File[] = [];
+
+    if (evt.dataTransfer?.files) {
+      for (let i = 0; i < evt.dataTransfer.files.length; i++) {
+        const file = evt.dataTransfer.files[i];
+        if (file.type.startsWith('image/')) {
+          files.push(file);
+        }
+      }
+    }
+
+    if (files.length === 0) return;
+
+    evt.preventDefault();
+    evt.stopPropagation();
+
+    const cursorPos = editor.getCursor();
+
+    if (this.settings.confirmBeforeUpload) {
+      const modal = new UploadConfirmationModal(this.app, this, files);
+      modal.open();
+
+      const userResp = await modal.response();
+      switch (userResp.shouldUpload) {
+        case undefined:
+          return;
+        case true:
+          if (userResp.alwaysUpload) {
+            this.settings.confirmBeforeUpload = false;
+            await this.saveSettings();
+          }
+          break;
+        case false:
+          // Let Obsidian handle the drop normally
+          return;
+        default:
+          return;
+      }
+    }
+
+    for (const file of files) {
+      this.uploadFileAndEmbedR2Image(file, cursorPos).catch(error => {
+        new Notice(`Failed to upload ${file.name}: ${error.message}`);
+      });
+    }
+  }
+
   async uploadImage(file: File): Promise<string | null> {
     if (!this.r2Uploader) {
       new Notice('R2 Uploader not configured. Please check your settings.');
@@ -218,7 +315,7 @@ export default class R2UploaderPlugin extends Plugin {
 
     try {
       new Notice(`Uploading ${file.name} to R2...`);
-      const url = await this.r2Uploader.upload(file);
+      const url = await this.r2Uploader.upload(file, '');
       new Notice(`Uploaded: ${url}`);
       return url;
     } catch (error) {
