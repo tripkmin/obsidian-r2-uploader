@@ -90,6 +90,20 @@ export default class ImageTagProcessor {
   static replaceImageTag(content: string, imageTag: ImageTag, newUrl: string): string {
     let newImageTag: string;
 
+    const isVideo =
+      /\.(mp4|mov|m4v|webm|ogg|ogv|mkv|avi)$/i.test(imageTag.imagePath) ||
+      /\.(mp4|mov|m4v|webm|ogg|ogv|mkv|avi)(\?|#|$)/i.test(newUrl);
+
+    if (isVideo) {
+      // Videos should render with HTML video tag so playback controls are available.
+      newImageTag = `<video controls src="${newUrl}"></video>`;
+      return (
+        content.substring(0, imageTag.start) +
+        newImageTag +
+        content.substring(imageTag.end)
+      );
+    }
+
     // Check if it's a wiki link format
     if (imageTag.originalText.startsWith('![[') && imageTag.originalText.endsWith(']]')) {
       // Convert wiki link to markdown image
