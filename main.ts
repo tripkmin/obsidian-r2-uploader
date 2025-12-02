@@ -10,6 +10,9 @@ import {
   PluginSettingTab,
   Setting,
   TFile,
+  TFolder,
+  TAbstractFile,
+  Menu,
 } from 'obsidian';
 import { R2Uploader, R2Setting } from './src/uploader/r2Uploader';
 import ImageTagProcessor, { ImageTag } from './src/uploader/imageTagProcessor';
@@ -125,7 +128,7 @@ export default class R2UploaderPlugin extends Plugin {
     const statusBarItemEl = this.addStatusBarItem();
     statusBarItemEl.setText('R2 Uploader Ready');
 
-    // This adds a simple command that can be triggered anywhere
+    // This adds simple commands that can be triggered anywhere
     this.addCommand({
       id: 'publish-page-to-r2',
       name: 'Publish Page to R2',
@@ -133,6 +136,60 @@ export default class R2UploaderPlugin extends Plugin {
         new PublishPageModal(this.app, this).open();
       },
     });
+
+    this.addCommand({
+      id: 'publish-current-folder-to-r2',
+      name: 'Publish Current Folder to R2',
+      callback: () => {
+        this.publishCurrentFolderToR2();
+      },
+    });
+
+    this.addCommand({
+      id: 'publish-vault-to-r2',
+      name: 'Publish Entire Vault to R2',
+      callback: () => {
+        this.publishVaultToR2();
+      },
+    });
+
+    // Add context menu items for publishing from the file explorer
+    // Single file/folder context menu
+    this.registerEvent(
+      this.app.workspace.on('file-menu', (menu: Menu, file: TAbstractFile) => {
+        if (!(file instanceof TFile) && !(file instanceof TFolder)) return;
+
+        menu.addItem(item => {
+          item
+            .setTitle('Publish Selected Files to R2')
+            .setIcon('upload')
+            .onClick(async () => {
+              const fallbackFile = file instanceof TFile ? file : null;
+              const files = this.getSelectedMarkdownFiles(fallbackFile);
+              await this.publishSelectedFilesToR2(files);
+            });
+        });
+      })
+    );
+
+    // Multi-file selection context menu (like Multi Properties)
+    this.registerEvent(
+      this.app.workspace.on('files-menu', (menu: Menu, files: TAbstractFile[]) => {
+        const markdownFiles = files.filter(
+          f => f instanceof TFile && (f as TFile).extension === 'md'
+        ) as TFile[];
+        if (markdownFiles.length === 0) return;
+
+        menu.addItem(item => {
+          item
+            .setTitle('Publish Selected Files to R2')
+            .setIcon('upload')
+            .onClick(async () => {
+              await this.publishSelectedFilesToR2(markdownFiles);
+            });
+        });
+      })
+    );
 
     // This adds a settings tab so the user can configure various aspects of the plugin
     this.addSettingTab(new R2UploaderSettingTab(this.app, this));
@@ -408,6 +465,30 @@ export default class R2UploaderPlugin extends Plugin {
     return this.extensionMimeMap[lower] || 'application/octet-stream';
   }
 
+  /**
+   * Get currently selected markdown files in the file explorer.
+   * If selection cannot be determined, fall back to the provided single file.
+   */
+  private getSelectedMarkdownFiles(fallback: TFile | null): TFile[] {
+    try {
+      const leaves = this.app.workspace.getLeavesOfType('file-explorer');
+      if (leaves.length > 0) {
+        const view: any = leaves[0].view;
+        if (view?.getSelection) {
+          const selection = view.getSelection() as TFile[];
+          const markdownFiles = selection.filter(f => f.extension === 'md');
+          if (markdownFiles.length > 0) {
+            return markdownFiles;
+          }
+        }
+      }
+    } catch (_) {
+      // ignore errors and fall back to single file
+    }
+
+    return fallback && fallback.extension === 'md' ? [fallback] : [];
+  }
+
   private embedMarkDownImage(pasteId: string, imageUrl: string, file: File) {
     const progressText = R2UploaderPlugin.progressTextFor(pasteId);
 
@@ -510,20 +591,54 @@ export default class R2UploaderPlugin extends Plugin {
     }
   }
 
-  async publishPageToR2(): Promise<void> {
-    const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-    if (!activeView) {
-      new Notice('No active markdown view found.');
+  /**
+   * Upload local images referenced in the given markdown files and update them in-place.
+   */
+  private async publishSelectedFilesToR2(files: TFile[]): Promise<void> {
+    if (!files || files.length === 0) {
+      new Notice('No markdown files selected.');
       return;
     }
 
-    const editor = activeView.editor;
-    const content = editor.getValue();
+    let totalSuccess = 0;
+    let totalError = 0;
+
+    new Notice(
+      `Starting R2 upload for ${files.length} selected markdown file(s). This may take a while.`
+    );
+
+    for (const file of files) {
+      try {
+        const content = await this.app.vault.read(file);
+        const { updatedContent, successCount, errorCount } =
+          await this.uploadLocalImagesInContent(content, file);
+
+        if (successCount > 0) {
+          await this.app.vault.modify(file, updatedContent);
+        }
+
+        totalSuccess += successCount;
+        totalError += errorCount;
+      } catch (e) {
+        new Notice(`Failed to process "${file.name}": ${e.message}`);
+        totalError++;
+      }
+    }
+
+    new Notice(
+      `Finished uploading images for selected files. Uploaded ${totalSuccess} images with ${totalError} errors.`
+    );
+  }
+
+  private async uploadLocalImagesInContent(
+    content: string,
+    fileContext: TFile
+  ): Promise<{ updatedContent: string; successCount: number; errorCount: number }> {
     const imageTags = ImageTagProcessor.extractImageTags(content);
 
     if (imageTags.length === 0) {
-      new Notice('No images found in the current note.');
-      return;
+      new Notice(`No images found in "${fileContext.name}".`);
+      return { updatedContent: content, successCount: 0, errorCount: 0 };
     }
 
     // Filter local images only
@@ -532,11 +647,13 @@ export default class R2UploaderPlugin extends Plugin {
     );
 
     if (localImageTags.length === 0) {
-      new Notice('No local images found in the current note.');
-      return;
+      new Notice(`No local images found in "${fileContext.name}".`);
+      return { updatedContent: content, successCount: 0, errorCount: 0 };
     }
 
-    new Notice(`Found ${localImageTags.length} local images to upload.`);
+    new Notice(
+      `Found ${localImageTags.length} local images to upload in "${fileContext.name}".`
+    );
 
     let updatedContent = content;
     let successCount = 0;
@@ -558,7 +675,7 @@ export default class R2UploaderPlugin extends Plugin {
 
         // 2) 실패하면, Obsidian의 링크 해석 로직(metadataCache)을 사용해서 전역 검색
         if (!file) {
-          const activeFile = activeView.file;
+          const activeFile = fileContext;
           if (activeFile) {
             const linked = this.app.metadataCache.getFirstLinkpathDest(
               imageTag.imagePath,
@@ -579,7 +696,7 @@ export default class R2UploaderPlugin extends Plugin {
 
         if (!file) {
           new Notice(
-            `File not found: ${imageTag.imagePath} (resolved to: ${normalizedPath}). Tried global search but could not locate the file.`
+            `File not found: ${imageTag.imagePath} (resolved to: ${normalizedPath}) in "${fileContext.name}". Tried global search but could not locate the file.`
           );
           errorCount++;
           continue;
@@ -609,7 +726,9 @@ export default class R2UploaderPlugin extends Plugin {
           errorCount++;
         }
       } catch (error) {
-        new Notice(`Failed to upload ${imageTag.imagePath}: ${error.message}`);
+        new Notice(
+          `Failed to upload ${imageTag.imagePath} in "${fileContext.name}": ${error.message}`
+        );
         errorCount++;
       }
     }
@@ -620,10 +739,7 @@ export default class R2UploaderPlugin extends Plugin {
       let fileName = '';
 
       // Extract filename from wiki link: ![[filename.png]]
-      if (
-        replacement.originalText.startsWith('![[') &&
-        replacement.originalText.endsWith(']]')
-      ) {
+      if (/^!\[\[/.test(replacement.originalText) && /\]\]$/.test(replacement.originalText)) {
         fileName = replacement.originalText.slice(3, -2); // Remove ![[ and ]]
       }
       // Extract filename from markdown image: ![alt](filename.png)
@@ -653,13 +769,116 @@ export default class R2UploaderPlugin extends Plugin {
       updatedContent = updatedContent.replaceAll(replacement.originalText, newImageTag);
     }
 
-    // Update the editor content
+    return { updatedContent, successCount, errorCount };
+  }
+
+  async publishPageToR2(): Promise<void> {
+    const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+    if (!activeView) {
+      new Notice('No active markdown view found.');
+      return;
+    }
+
+    const fileContext = activeView.file;
+    if (!fileContext) {
+      new Notice('No active file found.');
+      return;
+    }
+
+    const editor = activeView.editor;
+    const content = editor.getValue();
+
+    const { updatedContent, successCount, errorCount } =
+      await this.uploadLocalImagesInContent(content, fileContext);
+
     if (successCount > 0) {
       editor.setValue(updatedContent);
-      new Notice(`Successfully uploaded ${successCount} images. ${errorCount} failed.`);
-    } else {
-      new Notice(`Failed to upload any images. ${errorCount} errors.`);
+      new Notice(
+        `Successfully uploaded ${successCount} images in current note. ${errorCount} failed.`
+      );
+    } else if (errorCount > 0) {
+      new Notice(
+        `Failed to upload any images in current note. ${errorCount} errors encountered.`
+      );
     }
+  }
+
+  async publishCurrentFolderToR2(): Promise<void> {
+    const activeFile = this.app.workspace.getActiveFile();
+    if (!activeFile) {
+      new Notice('No active file found.');
+      return;
+    }
+
+    const folder = activeFile.parent;
+    if (!folder) {
+      new Notice('Active file has no parent folder.');
+      return;
+    }
+
+    const allMarkdownFiles = this.app.vault.getMarkdownFiles();
+    const targetFiles = allMarkdownFiles.filter(f => f.parent?.path === folder.path);
+
+    if (targetFiles.length === 0) {
+      new Notice('No markdown files found in the current folder.');
+      return;
+    }
+
+    new Notice(
+      `Starting R2 upload for ${targetFiles.length} markdown files in the current folder.`
+    );
+
+    let totalSuccess = 0;
+    let totalError = 0;
+
+    for (const file of targetFiles) {
+      const content = await this.app.vault.read(file);
+      const { updatedContent, successCount, errorCount } =
+        await this.uploadLocalImagesInContent(content, file);
+
+      if (successCount > 0) {
+        await this.app.vault.modify(file, updatedContent);
+      }
+
+      totalSuccess += successCount;
+      totalError += errorCount;
+    }
+
+    new Notice(
+      `Finished uploading images for current folder. Uploaded ${totalSuccess} images with ${totalError} errors.`
+    );
+  }
+
+  async publishVaultToR2(): Promise<void> {
+    const allMarkdownFiles = this.app.vault.getMarkdownFiles();
+    if (allMarkdownFiles.length === 0) {
+      new Notice('No markdown files found in the vault.');
+      return;
+    }
+
+    new Notice(
+      `Starting R2 upload for ${allMarkdownFiles.length} markdown files in the vault. This may take a while.`
+    );
+
+    let totalSuccess = 0;
+    let totalError = 0;
+
+    for (const file of allMarkdownFiles) {
+      const content = await this.app.vault.read(file);
+      const { updatedContent, successCount, errorCount } =
+        await this.uploadLocalImagesInContent(content, file);
+
+      if (successCount > 0) {
+        await this.app.vault.modify(file, updatedContent);
+      }
+
+      totalSuccess += successCount;
+      totalError += errorCount;
+    }
+
+    new Notice(
+      `Finished uploading images for entire vault. Uploaded ${totalSuccess} images with ${totalError} errors.`
+    );
   }
 }
 
