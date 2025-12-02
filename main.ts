@@ -76,6 +76,34 @@ const DEFAULT_SETTINGS: R2UploaderSettings = {
 export default class R2UploaderPlugin extends Plugin {
   settings: R2UploaderSettings;
   private r2Uploader: R2Uploader | null = null;
+  private static readonly extensionMimeMap: Record<string, string> = {
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    gif: 'image/gif',
+    webp: 'image/webp',
+    svg: 'image/svg+xml',
+    bmp: 'image/bmp',
+    tiff: 'image/tiff',
+    tif: 'image/tiff',
+    avif: 'image/avif',
+    heic: 'image/heic',
+    heif: 'image/heif',
+    mp4: 'video/mp4',
+    mov: 'video/quicktime',
+    m4v: 'video/x-m4v',
+    webm: 'video/webm',
+    ogg: 'video/ogg',
+    ogv: 'video/ogg',
+    mkv: 'video/x-matroska',
+    avi: 'video/x-msvideo',
+    mpg: 'video/mpeg',
+    mpeg: 'video/mpeg',
+    mpe: 'video/mpeg',
+    m2v: 'video/mpeg',
+    '3gp': 'video/3gpp',
+    '3g2': 'video/3gpp2',
+  };
 
   async onload() {
     await this.loadSettings();
@@ -374,13 +402,23 @@ export default class R2UploaderPlugin extends Plugin {
     return `![Uploading file...${id}]()`;
   }
 
+  private static mimeTypeFromExtension(extension: string): string {
+    if (!extension) return 'application/octet-stream';
+    const lower = extension.toLowerCase();
+    return this.extensionMimeMap[lower] || 'application/octet-stream';
+  }
+
   private embedMarkDownImage(pasteId: string, imageUrl: string, file: File) {
     const progressText = R2UploaderPlugin.progressTextFor(pasteId);
 
-    // Use the actual uploaded URL instead of local file reference
-    const markDownImage = `![](${imageUrl})`;
+    const isVideo =
+      file.type?.startsWith('video/') ||
+      ImageTagProcessor.isVideoAsset(file.name) ||
+      ImageTagProcessor.isVideoAsset(imageUrl);
 
-    this.replaceFirstOccurrence(this.activeEditor, progressText, markDownImage);
+    const embedTag = isVideo ? `<video controls src="${imageUrl}"></video>` : `![](${imageUrl})`;
+
+    this.replaceFirstOccurrence(this.activeEditor, progressText, embedTag);
   }
 
   private generateUniqueFileName(originalName: string): string {
@@ -439,33 +477,34 @@ export default class R2UploaderPlugin extends Plugin {
     }
 
     const editor = activeView.editor;
-    const urls: string[] = [];
+    const uploads: { url: string; file: File }[] = [];
 
     for (const file of files) {
       const url = await this.uploadImage(file);
       if (url) {
-        urls.push(url);
+        uploads.push({ url, file });
       }
     }
 
-    if (urls.length > 0) {
-      // Generate image tags with actual uploaded URLs
-      const imageTags = urls.map(url => `![](${url})`);
+    if (uploads.length > 0) {
+      // Generate image/video tags with actual uploaded URLs
+      const mediaTags = uploads.map(({ url, file }) => {
+        const isVideo =
+          file.type?.startsWith('video/') ||
+          ImageTagProcessor.isVideoAsset(file.name) ||
+          ImageTagProcessor.isVideoAsset(url);
+        return isVideo ? `<video controls src="${url}"></video>` : `![](${url})`;
+      });
 
       // Insert image tags at cursor position
       const cursor = editor.getCursor();
-      const imageText = imageTags.join('\n');
-
-      if (imageTags.length === 1) {
-        editor.replaceRange(imageText, cursor, cursor);
-      } else {
-        editor.replaceRange(imageText, cursor, cursor);
-      }
+      const embedText = mediaTags.join('\n');
+      editor.replaceRange(embedText, cursor, cursor);
 
       // Move cursor after inserted content
       const newCursor = {
-        line: cursor.line + imageTags.length - 1,
-        ch: editor.getLine(cursor.line + imageTags.length - 1).length,
+        line: cursor.line + mediaTags.length - 1,
+        ch: editor.getLine(cursor.line + mediaTags.length - 1).length,
       };
       editor.setCursor(newCursor);
     }
@@ -528,14 +567,8 @@ export default class R2UploaderPlugin extends Plugin {
         const fileContent = await this.app.vault.readBinary(file);
 
         // Determine MIME type from file extension
-        const extension = file.extension.toLowerCase();
-        let mimeType = 'image/jpeg'; // default
-        if (extension === 'png') mimeType = 'image/png';
-        else if (extension === 'gif') mimeType = 'image/gif';
-        else if (extension === 'webp') mimeType = 'image/webp';
-        else if (extension === 'svg') mimeType = 'image/svg+xml';
-        else if (extension === 'bmp') mimeType = 'image/bmp';
-        else if (extension === 'tiff' || extension === 'tif') mimeType = 'image/tiff';
+        const extension = file.extension?.toLowerCase() || '';
+        const mimeType = R2UploaderPlugin.mimeTypeFromExtension(extension);
 
         // Create a File object from the binary data
         const blob = new Blob([fileContent], { type: mimeType });
@@ -588,7 +621,13 @@ export default class R2UploaderPlugin extends Plugin {
           : '';
 
       // Use replaceAll for safety (like obsidian-image-upload-toolkit)
-      const newImageTag = `![${altText}](${replacement.newUrl})`;
+      const isVideo =
+        ImageTagProcessor.isVideoAsset(fileName) ||
+        ImageTagProcessor.isVideoAsset(replacement.newUrl);
+
+      const newImageTag = isVideo
+        ? `<video controls src="${replacement.newUrl}"></video>`
+        : `![${altText}](${replacement.newUrl})`;
       updatedContent = updatedContent.replaceAll(replacement.originalText, newImageTag);
     }
 

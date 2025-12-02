@@ -1,5 +1,5 @@
 import { Editor, MarkdownView, TFile, normalizePath } from 'obsidian';
-import path from 'path';
+import * as path from 'path';
 
 export const ACTION_PUBLISH = 'publish';
 
@@ -12,6 +12,20 @@ export interface ImageTag {
 }
 
 export default class ImageTagProcessor {
+  private static readonly videoExtensionRegex =
+    /\.(mp4|mov|m4v|webm|ogg|ogv|mkv|avi|mpeg|mpg|mpe|m2v|3gp|3g2)(?=($|[?#]))/i;
+
+  static isVideoAsset(target?: string | null): boolean {
+    if (!target) return false;
+    let normalized = target;
+    try {
+      normalized = decodeURIComponent(target);
+    } catch (_) {
+      // ignore decode errors and use the raw string
+    }
+    return this.videoExtensionRegex.test(normalized.toLowerCase());
+  }
+
   static extractImageTags(content: string): ImageTag[] {
     const imageTags: ImageTag[] = [];
 
@@ -91,8 +105,8 @@ export default class ImageTagProcessor {
     let newImageTag: string;
 
     const isVideo =
-      /\.(mp4|mov|m4v|webm|ogg|ogv|mkv|avi)$/i.test(imageTag.imagePath) ||
-      /\.(mp4|mov|m4v|webm|ogg|ogv|mkv|avi)(\?|#|$)/i.test(newUrl);
+      ImageTagProcessor.isVideoAsset(imageTag.imagePath) ||
+      ImageTagProcessor.isVideoAsset(newUrl);
 
     if (isVideo) {
       // Videos should render with HTML video tag so playback controls are available.
