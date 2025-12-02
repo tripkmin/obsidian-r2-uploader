@@ -553,11 +553,33 @@ export default class R2UploaderPlugin extends Plugin {
         );
         const normalizedPath = normalizePath(resolvedPath);
 
-        // Get the file from vault using the resolved path
-        const file = this.app.vault.getAbstractFileByPath(normalizedPath) as TFile;
+        // 1) 기본 경로로 먼저 찾기
+        let file = this.app.vault.getAbstractFileByPath(normalizedPath) as TFile | null;
+
+        // 2) 실패하면, Obsidian의 링크 해석 로직(metadataCache)을 사용해서 전역 검색
+        if (!file) {
+          const activeFile = activeView.file;
+          if (activeFile) {
+            const linked = this.app.metadataCache.getFirstLinkpathDest(
+              imageTag.imagePath,
+              activeFile.path
+            );
+            if (linked) {
+              file = linked as TFile;
+            }
+          }
+        }
+
+        // 3) 그래도 못 찾으면, vault 내 모든 파일 이름을 전역 검색
+        if (!file) {
+          const imageName = imageTag.imagePath.split('/').pop();
+          const allFiles = this.app.vault.getFiles();
+          file = allFiles.find((f: TFile) => f.name === imageName) ?? null;
+        }
+
         if (!file) {
           new Notice(
-            `File not found: ${imageTag.imagePath} (resolved to: ${normalizedPath})`
+            `File not found: ${imageTag.imagePath} (resolved to: ${normalizedPath}). Tried global search but could not locate the file.`
           );
           errorCount++;
           continue;
