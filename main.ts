@@ -45,6 +45,233 @@ const generatePseudoRandomId = (generatedIdLength = 5) => {
 
 // Remember to rename these classes and interfaces!
 
+type Language = 'en' | 'ko';
+
+interface Translations {
+  // General
+  pluginName: string;
+  pluginLoaded: string;
+  pluginReady: string;
+  notConfigured: string;
+  
+  // Commands
+  publishPageToR2: string;
+  publishCurrentFolderToR2: string;
+  publishEntireVaultToR2: string;
+  publishSelectedFilesToR2: string;
+  
+  // Upload
+  uploading: string;
+  uploaded: string;
+  uploadFailed: string;
+  downloadExternalImage: string;
+  
+  // Messages
+  noActiveMarkdownView: string;
+  noActiveFile: string;
+  noActiveFileParent: string;
+  noMarkdownFilesSelected: string;
+  noMarkdownFilesInFolder: string;
+  noMarkdownFilesInVault: string;
+  noImagesFound: string;
+  noImagesToUpload: string;
+  noLocalImagesFound: string;
+  foundImages: string;
+  startingUpload: string;
+  finishedUpload: string;
+  failedToProcess: string;
+  fileNotFound: string;
+  failedToUpload: string;
+  failedToDownloadUpload: string;
+  successfullyUploaded: string;
+  failedToUploadAny: string;
+  
+  // Modals
+  r2Uploader: string;
+  uploadConfirmationSingle: string;
+  uploadConfirmationMultiple: string;
+  alwaysUpload: string;
+  upload: string;
+  pasteLocally: string;
+  publishPageToR2Title: string;
+  publishPageToR2Desc: string;
+  publishToR2: string;
+  cancel: string;
+  
+  // Settings
+  uploadSettings: string;
+  useImageNameAsAltText: string;
+  useImageNameAsAltTextDesc: string;
+  updateOriginalDocument: string;
+  updateOriginalDocumentDesc: string;
+  ignoreNoteProperties: string;
+  ignoreNotePropertiesDesc: string;
+  showProgressModal: string;
+  showProgressModalDesc: string;
+  confirmBeforeUpload: string;
+  confirmBeforeUploadDesc: string;
+  downloadExternalImages: string;
+  downloadExternalImagesDesc: string;
+  language: string;
+  languageDesc: string;
+  cloudflareR2Settings: string;
+  cloudflareR2AccessKeyID: string;
+  cloudflareR2AccessKeyIDDesc: string;
+  cloudflareR2SecretAccessKey: string;
+  cloudflareR2SecretAccessKeyDesc: string;
+  cloudflareR2Endpoint: string;
+  cloudflareR2EndpointDesc: string;
+  cloudflareR2BucketName: string;
+  cloudflareR2BucketNameDesc: string;
+  targetPath: string;
+  targetPathDesc: string;
+  r2devUrlCustomDomain: string;
+  r2devUrlCustomDomainDesc: string;
+}
+
+const translations: Record<Language, Translations> = {
+  en: {
+    pluginName: 'R2 Uploader',
+    pluginLoaded: 'R2 Uploader Plugin Loaded!',
+    pluginReady: 'R2 Uploader Ready',
+    notConfigured: 'R2 Uploader not configured. Please check your settings.',
+    publishPageToR2: 'Publish Page to R2',
+    publishCurrentFolderToR2: 'Publish Current Folder to R2',
+    publishEntireVaultToR2: 'Publish Entire Vault to R2',
+    publishSelectedFilesToR2: 'Publish Selected Files to R2',
+    uploading: 'Uploading',
+    uploaded: 'Uploaded',
+    uploadFailed: 'Upload failed',
+    downloadExternalImage: 'Downloading external image',
+    noActiveMarkdownView: 'No active markdown view found.',
+    noActiveFile: 'No active file found.',
+    noActiveFileParent: 'Active file has no parent folder.',
+    noMarkdownFilesSelected: 'No markdown files selected.',
+    noMarkdownFilesInFolder: 'No markdown files found in the current folder.',
+    noMarkdownFilesInVault: 'No markdown files found in the vault.',
+    noImagesFound: 'No images found',
+    noImagesToUpload: 'No images found to upload',
+    noLocalImagesFound: 'No local images found',
+    foundImages: 'Found {local} local and {external} external images to upload',
+    startingUpload: 'Starting R2 upload',
+    finishedUpload: 'Finished uploading images',
+    failedToProcess: 'Failed to process',
+    fileNotFound: 'File not found',
+    failedToUpload: 'Failed to upload',
+    failedToDownloadUpload: 'Failed to download/upload external image',
+    successfullyUploaded: 'Successfully uploaded {count} images',
+    failedToUploadAny: 'Failed to upload any images',
+    r2Uploader: 'R2 Uploader',
+    uploadConfirmationSingle: 'Would you like to upload "{fileName}" to Cloudflare R2 or paste your content locally?',
+    uploadConfirmationMultiple: 'Would you like to upload {count} images ({fileNames}) to Cloudflare R2 or paste your content locally?',
+    alwaysUpload: 'Always Upload',
+    upload: 'Upload',
+    pasteLocally: 'Paste Locally',
+    publishPageToR2Title: 'Publish Page to R2',
+    publishPageToR2Desc: 'This will upload all local images in the current note to Cloudflare R2 and replace the links.',
+    publishToR2: 'Publish to R2',
+    cancel: 'Cancel',
+    uploadSettings: 'Upload Settings',
+    useImageNameAsAltText: 'Use image name as Alt Text',
+    useImageNameAsAltTextDesc: "Whether to use image name as Alt Text with '-' and '_' replaced with space.",
+    updateOriginalDocument: 'Update original document',
+    updateOriginalDocumentDesc: 'Whether to replace internal link with store link.',
+    ignoreNoteProperties: 'Ignore note properties',
+    ignoreNotePropertiesDesc: "Where to ignore note properties when copying to clipboard. This won't affect original note.",
+    showProgressModal: 'Show progress modal',
+    showProgressModalDesc: 'Show a modal dialog with detailed progress when uploading images (auto close in 3s). If disabled, a simpler status indicator will be used.',
+    confirmBeforeUpload: 'Confirm before upload',
+    confirmBeforeUploadDesc: 'Show confirmation dialog before uploading images.',
+    downloadExternalImages: 'Download external images',
+    downloadExternalImagesDesc: 'Download external images (http/https URLs) and upload them to R2. When enabled, external image URLs will be downloaded and replaced with R2 URLs.',
+    language: 'Language',
+    languageDesc: 'Select the language for the plugin interface.',
+    cloudflareR2Settings: 'CloudFlare R2 Settings',
+    cloudflareR2AccessKeyID: 'Cloudflare R2 Access Key ID',
+    cloudflareR2AccessKeyIDDesc: 'Your Cloudflare R2 access key ID',
+    cloudflareR2SecretAccessKey: 'Cloudflare R2 Secret Access Key',
+    cloudflareR2SecretAccessKeyDesc: 'Your Cloudflare R2 secret access key',
+    cloudflareR2Endpoint: 'Cloudflare R2 Endpoint',
+    cloudflareR2EndpointDesc: 'Your Cloudflare R2 endpoint URL (e.g., https://account-id.r2.cloudflarestorage.com)',
+    cloudflareR2BucketName: 'Cloudflare R2 Bucket Name',
+    cloudflareR2BucketNameDesc: 'Your Cloudflare R2 bucket name',
+    targetPath: 'Target Path',
+    targetPathDesc: 'The path to store image.\\nSupport {year} {mon} {day} {random} {filename} vars. For example, /{year}/{mon}/{day}/{filename} with uploading pic.jpg, it will store as /2023/06/08/pic.jpg.',
+    r2devUrlCustomDomain: 'R2.dev URL, Custom Domain Name',
+    r2devUrlCustomDomainDesc: 'You can use the R2.dev URL such as https://pub-xxxx.r2.dev here, or custom domain. If the custom domain name is example.com, you can use https://example.com/pic.jpg to access pic.img.',
+  },
+  ko: {
+    pluginName: 'R2 업로더',
+    pluginLoaded: 'R2 업로더 플러그인이 로드되었습니다!',
+    pluginReady: 'R2 업로더 준비됨',
+    notConfigured: 'R2 업로더가 설정되지 않았습니다. 설정을 확인해주세요.',
+    publishPageToR2: '현재 페이지를 R2에 게시',
+    publishCurrentFolderToR2: '현재 폴더를 R2에 게시',
+    publishEntireVaultToR2: '전체 볼트를 R2에 게시',
+    publishSelectedFilesToR2: '선택한 파일을 R2에 게시',
+    uploading: '업로드 중',
+    uploaded: '업로드 완료',
+    uploadFailed: '업로드 실패',
+    downloadExternalImage: '외부 이미지 다운로드 중',
+    noActiveMarkdownView: '활성 마크다운 뷰를 찾을 수 없습니다.',
+    noActiveFile: '활성 파일을 찾을 수 없습니다.',
+    noActiveFileParent: '활성 파일에 상위 폴더가 없습니다.',
+    noMarkdownFilesSelected: '선택한 마크다운 파일이 없습니다.',
+    noMarkdownFilesInFolder: '현재 폴더에서 마크다운 파일을 찾을 수 없습니다.',
+    noMarkdownFilesInVault: '볼트에서 마크다운 파일을 찾을 수 없습니다.',
+    noImagesFound: '이미지를 찾을 수 없습니다',
+    noImagesToUpload: '업로드할 이미지를 찾을 수 없습니다',
+    noLocalImagesFound: '로컬 이미지를 찾을 수 없습니다',
+    foundImages: '로컬 이미지 {local}개와 외부 이미지 {external}개를 찾았습니다',
+    startingUpload: 'R2 업로드 시작',
+    finishedUpload: '이미지 업로드 완료',
+    failedToProcess: '처리 실패',
+    fileNotFound: '파일을 찾을 수 없습니다',
+    failedToUpload: '업로드 실패',
+    failedToDownloadUpload: '외부 이미지 다운로드/업로드 실패',
+    successfullyUploaded: '{count}개의 이미지를 성공적으로 업로드했습니다',
+    failedToUploadAny: '이미지 업로드에 실패했습니다',
+    r2Uploader: 'R2 업로더',
+    uploadConfirmationSingle: '"{fileName}"을(를) Cloudflare R2에 업로드하시겠습니까? 아니면 로컬에 붙여넣으시겠습니까?',
+    uploadConfirmationMultiple: '{count}개의 이미지({fileNames})를 Cloudflare R2에 업로드하시겠습니까? 아니면 로컬에 붙여넣으시겠습니까?',
+    alwaysUpload: '항상 업로드',
+    upload: '업로드',
+    pasteLocally: '로컬에 붙여넣기',
+    publishPageToR2Title: '현재 페이지를 R2에 게시',
+    publishPageToR2Desc: '현재 노트의 모든 로컬 이미지를 Cloudflare R2에 업로드하고 링크를 교체합니다.',
+    publishToR2: 'R2에 게시',
+    cancel: '취소',
+    uploadSettings: '업로드 설정',
+    useImageNameAsAltText: '이미지 이름을 Alt 텍스트로 사용',
+    useImageNameAsAltTextDesc: "이미지 이름을 Alt 텍스트로 사용할지 여부. '-'와 '_'는 공백으로 대체됩니다.",
+    updateOriginalDocument: '원본 문서 업데이트',
+    updateOriginalDocumentDesc: '내부 링크를 저장소 링크로 교체할지 여부.',
+    ignoreNoteProperties: '노트 속성 무시',
+    ignoreNotePropertiesDesc: '클립보드에 복사할 때 노트 속성을 무시할지 여부. 원본 노트에는 영향을 주지 않습니다.',
+    showProgressModal: '진행 상황 모달 표시',
+    showProgressModalDesc: '이미지 업로드 시 상세 진행 상황을 모달 대화상자로 표시합니다 (3초 후 자동 닫힘). 비활성화하면 더 간단한 상태 표시기를 사용합니다.',
+    confirmBeforeUpload: '업로드 전 확인',
+    confirmBeforeUploadDesc: '이미지 업로드 전 확인 대화상자를 표시합니다.',
+    downloadExternalImages: '외부 이미지 다운로드',
+    downloadExternalImagesDesc: '외부 이미지(http/https URL)를 다운로드하여 R2에 업로드합니다. 활성화하면 외부 이미지 URL이 다운로드되어 R2 URL로 교체됩니다.',
+    language: '언어',
+    languageDesc: '플러그인 인터페이스의 언어를 선택합니다.',
+    cloudflareR2Settings: 'CloudFlare R2 설정',
+    cloudflareR2AccessKeyID: 'Cloudflare R2 액세스 키 ID',
+    cloudflareR2AccessKeyIDDesc: 'Cloudflare R2 액세스 키 ID',
+    cloudflareR2SecretAccessKey: 'Cloudflare R2 시크릿 액세스 키',
+    cloudflareR2SecretAccessKeyDesc: 'Cloudflare R2 시크릿 액세스 키',
+    cloudflareR2Endpoint: 'Cloudflare R2 엔드포인트',
+    cloudflareR2EndpointDesc: 'Cloudflare R2 엔드포인트 URL (예: https://account-id.r2.cloudflarestorage.com)',
+    cloudflareR2BucketName: 'Cloudflare R2 버킷 이름',
+    cloudflareR2BucketNameDesc: 'Cloudflare R2 버킷 이름',
+    targetPath: '저장 경로',
+    targetPathDesc: '이미지를 저장할 경로.\\n{year} {mon} {day} {random} {filename} 변수를 지원합니다. 예를 들어, /{year}/{mon}/{day}/{filename}로 설정하고 pic.jpg를 업로드하면 /2023/06/08/pic.jpg로 저장됩니다.',
+    r2devUrlCustomDomain: 'R2.dev URL, 사용자 정의 도메인 이름',
+    r2devUrlCustomDomainDesc: '여기에 https://pub-xxxx.r2.dev와 같은 R2.dev URL을 사용하거나 사용자 정의 도메인을 사용할 수 있습니다. 사용자 정의 도메인 이름이 example.com인 경우 https://example.com/pic.jpg를 사용하여 pic.img에 액세스할 수 있습니다.',
+  },
+};
+
 interface R2UploaderSettings {
   // CloudFlare R2 설정
   accessKeyId: string;
@@ -61,6 +288,7 @@ interface R2UploaderSettings {
   showProgressModal: boolean;
   confirmBeforeUpload: boolean;
   downloadExternalImages: boolean;
+  language: Language;
 }
 
 const DEFAULT_SETTINGS: R2UploaderSettings = {
@@ -79,10 +307,26 @@ const DEFAULT_SETTINGS: R2UploaderSettings = {
   showProgressModal: true,
   confirmBeforeUpload: true,
   downloadExternalImages: false,
+  language: 'en',
 };
 
 export default class R2UploaderPlugin extends Plugin {
   settings: R2UploaderSettings;
+  
+  // Translation helper function
+  t(key: keyof Translations, params?: Record<string, string | number>): string {
+    const lang = this.settings.language || 'en';
+    let text = translations[lang][key] || translations['en'][key];
+    
+    // Replace placeholders like {count}, {local}, etc.
+    if (params) {
+      Object.keys(params).forEach(param => {
+        text = text.replace(new RegExp(`\\{${param}\\}`, 'g'), String(params[param]));
+      });
+    }
+    
+    return text;
+  }
   private r2Uploader: R2Uploader | null = null;
   private static readonly extensionMimeMap: Record<string, string> = {
     png: 'image/png',
@@ -120,10 +364,10 @@ export default class R2UploaderPlugin extends Plugin {
     // This creates an icon in the left ribbon.
     const ribbonIconEl = this.addRibbonIcon(
       'upload',
-      'R2 Uploader',
+      this.t('pluginName'),
       (_evt: MouseEvent) => {
         // Called when the user clicks the icon.
-        new Notice('R2 Uploader Plugin Loaded!');
+        new Notice(this.t('pluginLoaded'));
       }
     );
     // Perform additional things with the ribbon
@@ -131,12 +375,12 @@ export default class R2UploaderPlugin extends Plugin {
 
     // This adds a status bar item to the bottom of the app. Does not work on mobile apps.
     const statusBarItemEl = this.addStatusBarItem();
-    statusBarItemEl.setText('R2 Uploader Ready');
+    statusBarItemEl.setText(this.t('pluginReady'));
 
     // This adds simple commands that can be triggered anywhere
     this.addCommand({
       id: 'publish-page-to-r2',
-      name: 'Publish Page to R2',
+      name: this.t('publishPageToR2'),
       callback: () => {
         new PublishPageModal(this.app, this).open();
       },
@@ -144,7 +388,7 @@ export default class R2UploaderPlugin extends Plugin {
 
     this.addCommand({
       id: 'publish-current-folder-to-r2',
-      name: 'Publish Current Folder to R2',
+      name: this.t('publishCurrentFolderToR2'),
       callback: () => {
         this.publishCurrentFolderToR2();
       },
@@ -152,7 +396,7 @@ export default class R2UploaderPlugin extends Plugin {
 
     this.addCommand({
       id: 'publish-vault-to-r2',
-      name: 'Publish Entire Vault to R2',
+      name: this.t('publishEntireVaultToR2'),
       callback: () => {
         this.publishVaultToR2();
       },
@@ -166,7 +410,7 @@ export default class R2UploaderPlugin extends Plugin {
 
         menu.addItem(item => {
           item
-            .setTitle('Publish Selected Files to R2')
+            .setTitle(this.t('publishSelectedFilesToR2'))
             .setIcon('upload')
             .onClick(async () => {
               const fallbackFile = file instanceof TFile ? file : null;
@@ -187,7 +431,7 @@ export default class R2UploaderPlugin extends Plugin {
 
         menu.addItem(item => {
           item
-            .setTitle('Publish Selected Files to R2')
+            .setTitle(this.t('publishSelectedFilesToR2'))
             .setIcon('upload')
             .onClick(async () => {
               await this.publishSelectedFilesToR2(markdownFiles);
@@ -250,7 +494,7 @@ export default class R2UploaderPlugin extends Plugin {
     if (evt instanceof PasteEventCopy) return;
 
     if (!this.r2Uploader) {
-      new Notice('R2 Uploader not configured. Please check your settings.');
+      new Notice(this.t('notConfigured'));
       return;
     }
 
@@ -346,7 +590,7 @@ export default class R2UploaderPlugin extends Plugin {
     markdownView: MarkdownView
   ) {
     if (!this.r2Uploader) {
-      new Notice('R2 Uploader not configured. Please check your settings.');
+      new Notice(this.t('notConfigured'));
       return;
     }
 
@@ -399,17 +643,17 @@ export default class R2UploaderPlugin extends Plugin {
 
   async uploadImage(file: File): Promise<string | null> {
     if (!this.r2Uploader) {
-      new Notice('R2 Uploader not configured. Please check your settings.');
+      new Notice(this.t('notConfigured'));
       return null;
     }
 
     try {
-      new Notice(`Uploading ${file.name} to R2...`);
+      new Notice(`${this.t('uploading')} ${file.name} to R2...`);
       const url = await this.r2Uploader.upload(file, '');
-      new Notice(`Uploaded: ${url}`);
+      new Notice(`${this.t('uploaded')}: ${url}`);
       return url;
     } catch (error) {
-      new Notice(`Upload failed: ${error.message}`);
+      new Notice(`${this.t('uploadFailed')}: ${error.message}`);
       return null;
     }
   }
@@ -558,7 +802,7 @@ export default class R2UploaderPlugin extends Plugin {
   async uploadImagesAndInsert(files: File[]): Promise<void> {
     const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (!activeView) {
-      new Notice('No active markdown view found.');
+      new Notice(this.t('noActiveMarkdownView'));
       return;
     }
 
@@ -603,7 +847,7 @@ export default class R2UploaderPlugin extends Plugin {
   private async downloadExternalImage(url: string): Promise<File | null> {
     return new Promise((resolve, reject) => {
       try {
-        new Notice(`Downloading external image: ${url.substring(0, 50)}...`);
+        new Notice(`${this.t('downloadExternalImage')}: ${url.substring(0, 50)}...`);
         
         const urlObj = new URL(url);
         const isHttps = urlObj.protocol === 'https:';
@@ -728,7 +972,7 @@ export default class R2UploaderPlugin extends Plugin {
    */
   private async publishSelectedFilesToR2(files: TFile[]): Promise<void> {
     if (!files || files.length === 0) {
-      new Notice('No markdown files selected.');
+      new Notice(this.t('noMarkdownFilesSelected'));
       return;
     }
 
@@ -736,7 +980,7 @@ export default class R2UploaderPlugin extends Plugin {
     let totalError = 0;
 
     new Notice(
-      `Starting R2 upload for ${files.length} selected markdown file(s). This may take a while.`
+      `${this.t('startingUpload')} for ${files.length} selected markdown file(s). This may take a while.`
     );
 
     for (const file of files) {
@@ -752,13 +996,13 @@ export default class R2UploaderPlugin extends Plugin {
         totalSuccess += successCount;
         totalError += errorCount;
       } catch (e) {
-        new Notice(`Failed to process "${file.name}": ${e.message}`);
+        new Notice(`${this.t('failedToProcess')} "${file.name}": ${e.message}`);
         totalError++;
       }
     }
 
     new Notice(
-      `Finished uploading images for selected files. Uploaded ${totalSuccess} images with ${totalError} errors.`
+      `${this.t('finishedUpload')} for selected files. ${this.t('successfullyUploaded', { count: totalSuccess.toString() })} with ${totalError} errors.`
     );
   }
 
@@ -769,7 +1013,7 @@ export default class R2UploaderPlugin extends Plugin {
     const imageTags = ImageTagProcessor.extractImageTags(content);
 
     if (imageTags.length === 0) {
-      new Notice(`No images found in "${fileContext.name}".`);
+      new Notice(`${this.t('noImagesFound')} in "${fileContext.name}".`);
       return { updatedContent: content, successCount: 0, errorCount: 0 };
     }
 
@@ -782,13 +1026,13 @@ export default class R2UploaderPlugin extends Plugin {
       : [];
 
     if (localImageTags.length === 0 && externalImageTags.length === 0) {
-      new Notice(`No images found to upload in "${fileContext.name}".`);
+      new Notice(`${this.t('noImagesToUpload')} in "${fileContext.name}".`);
       return { updatedContent: content, successCount: 0, errorCount: 0 };
     }
 
     const totalImages = localImageTags.length + externalImageTags.length;
     new Notice(
-      `Found ${localImageTags.length} local and ${externalImageTags.length} external images to upload in "${fileContext.name}".`
+      this.t('foundImages', { local: localImageTags.length.toString(), external: externalImageTags.length.toString() }) + ` in "${fileContext.name}".`
     );
 
     let updatedContent = content;
@@ -832,7 +1076,7 @@ export default class R2UploaderPlugin extends Plugin {
 
         if (!file) {
           new Notice(
-            `File not found: ${imageTag.imagePath} (resolved to: ${normalizedPath}) in "${fileContext.name}". Tried global search but could not locate the file.`
+            `${this.t('fileNotFound')}: ${imageTag.imagePath} (resolved to: ${normalizedPath}) in "${fileContext.name}". Tried global search but could not locate the file.`
           );
           errorCount++;
           continue;
@@ -863,7 +1107,7 @@ export default class R2UploaderPlugin extends Plugin {
         }
       } catch (error) {
         new Notice(
-          `Failed to upload ${imageTag.imagePath} in "${fileContext.name}": ${error.message}`
+          `${this.t('failedToUpload')} ${imageTag.imagePath} in "${fileContext.name}": ${error.message}`
         );
         errorCount++;
       }
@@ -893,7 +1137,7 @@ export default class R2UploaderPlugin extends Plugin {
         }
       } catch (error) {
         new Notice(
-          `Failed to download/upload external image ${imageTag.imagePath} in "${fileContext.name}": ${error.message}`
+          `${this.t('failedToDownloadUpload')} ${imageTag.imagePath} in "${fileContext.name}": ${error.message}`
         );
         errorCount++;
       }
@@ -941,13 +1185,13 @@ export default class R2UploaderPlugin extends Plugin {
   async publishPageToR2(): Promise<void> {
     const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (!activeView) {
-      new Notice('No active markdown view found.');
+      new Notice(this.t('noActiveMarkdownView'));
       return;
     }
 
     const fileContext = activeView.file;
     if (!fileContext) {
-      new Notice('No active file found.');
+      new Notice(this.t('noActiveFile'));
       return;
     }
 
@@ -960,11 +1204,11 @@ export default class R2UploaderPlugin extends Plugin {
     if (successCount > 0) {
       editor.setValue(updatedContent);
       new Notice(
-        `Successfully uploaded ${successCount} images in current note. ${errorCount} failed.`
+        `${this.t('successfullyUploaded', { count: successCount.toString() })} in current note. ${errorCount} failed.`
       );
     } else if (errorCount > 0) {
       new Notice(
-        `Failed to upload any images in current note. ${errorCount} errors encountered.`
+        `${this.t('failedToUploadAny')} in current note. ${errorCount} errors encountered.`
       );
     }
   }
@@ -978,7 +1222,7 @@ export default class R2UploaderPlugin extends Plugin {
 
     const folder = activeFile.parent;
     if (!folder) {
-      new Notice('Active file has no parent folder.');
+      new Notice(this.t('noActiveFileParent'));
       return;
     }
 
@@ -986,12 +1230,12 @@ export default class R2UploaderPlugin extends Plugin {
     const targetFiles = allMarkdownFiles.filter(f => f.parent?.path === folder.path);
 
     if (targetFiles.length === 0) {
-      new Notice('No markdown files found in the current folder.');
+      new Notice(this.t('noMarkdownFilesInFolder'));
       return;
     }
 
     new Notice(
-      `Starting R2 upload for ${targetFiles.length} markdown files in the current folder.`
+      `${this.t('startingUpload')} for ${targetFiles.length} markdown files in the current folder.`
     );
 
     let totalSuccess = 0;
@@ -1011,19 +1255,19 @@ export default class R2UploaderPlugin extends Plugin {
     }
 
     new Notice(
-      `Finished uploading images for current folder. Uploaded ${totalSuccess} images with ${totalError} errors.`
+      `${this.t('finishedUpload')} for current folder. ${this.t('successfullyUploaded', { count: totalSuccess.toString() })} with ${totalError} errors.`
     );
   }
 
   async publishVaultToR2(): Promise<void> {
     const allMarkdownFiles = this.app.vault.getMarkdownFiles();
     if (allMarkdownFiles.length === 0) {
-      new Notice('No markdown files found in the vault.');
+      new Notice(this.t('noMarkdownFilesInVault'));
       return;
     }
 
     new Notice(
-      `Starting R2 upload for ${allMarkdownFiles.length} markdown files in the vault. This may take a while.`
+      `${this.t('startingUpload')} for ${allMarkdownFiles.length} markdown files in the vault. This may take a while.`
     );
 
     let totalSuccess = 0;
@@ -1043,7 +1287,7 @@ export default class R2UploaderPlugin extends Plugin {
     }
 
     new Notice(
-      `Finished uploading images for entire vault. Uploaded ${totalSuccess} images with ${totalError} errors.`
+      `${this.t('finishedUpload')} for entire vault. ${this.t('successfullyUploaded', { count: totalSuccess.toString() })} with ${totalError} errors.`
     );
   }
 }
@@ -1068,20 +1312,20 @@ class UploadConfirmationModal extends Modal {
   }
 
   onOpen() {
-    this.titleEl.setText('R2 Uploader');
+    this.titleEl.setText(this.plugin.t('r2Uploader'));
 
     const fileNames = this.files.map(f => f.name).join(', ');
     const message =
       this.files.length === 1
-        ? `Would you like to upload "${fileNames}" to Cloudflare R2 or paste your content locally?`
-        : `Would you like to upload ${this.files.length} images (${fileNames}) to Cloudflare R2 or paste your content locally?`;
+        ? this.plugin.t('uploadConfirmationSingle', { fileName: fileNames })
+        : this.plugin.t('uploadConfirmationMultiple', { count: this.files.length.toString(), fileNames });
 
     this.contentEl.setText(message);
 
     const buttonContainer = this.modalEl.createDiv('modal-button-container');
 
     const alwaysUploadButton = buttonContainer.createEl('button', {
-      text: 'Always Upload',
+      text: this.plugin.t('alwaysUpload'),
     });
     alwaysUploadButton.addClass('mod-cta');
     alwaysUploadButton.onclick = () => {
@@ -1089,7 +1333,7 @@ class UploadConfirmationModal extends Modal {
       this.afterUserInput();
     };
 
-    const uploadButton = buttonContainer.createEl('button', { text: 'Upload' });
+    const uploadButton = buttonContainer.createEl('button', { text: this.plugin.t('upload') });
     uploadButton.addClass('mod-cta');
     uploadButton.onclick = () => {
       this.deferredResolve({ shouldUpload: true });
@@ -1097,7 +1341,7 @@ class UploadConfirmationModal extends Modal {
     };
 
     const pasteLocallyButton = buttonContainer.createEl('button', {
-      text: 'Paste Locally',
+      text: this.plugin.t('pasteLocally'),
     });
     pasteLocallyButton.onclick = () => {
       this.deferredResolve({ shouldUpload: false });
@@ -1132,22 +1376,22 @@ class PublishPageModal extends Modal {
 
   onOpen() {
     const { contentEl } = this;
-    contentEl.createEl('h2', { text: 'Publish Page to R2' });
+    contentEl.createEl('h2', { text: this.plugin.t('publishPageToR2Title') });
     contentEl.createEl('p', {
-      text: 'This will upload all local images in the current note to Cloudflare R2 and replace the links.',
+      text: this.plugin.t('publishPageToR2Desc'),
     });
 
     const buttonContainer = contentEl.createDiv();
     buttonContainer.addClass('r2-uploader-button-container');
 
-    const publishButton = buttonContainer.createEl('button', { text: 'Publish to R2' });
+    const publishButton = buttonContainer.createEl('button', { text: this.plugin.t('publishToR2') });
     publishButton.addClass('mod-cta');
     publishButton.onclick = async () => {
       this.close();
       await this.plugin.publishPageToR2();
     };
 
-    const cancelButton = buttonContainer.createEl('button', { text: 'Cancel' });
+    const cancelButton = buttonContainer.createEl('button', { text: this.plugin.t('cancel') });
     cancelButton.onclick = () => {
       this.close();
     };
@@ -1171,14 +1415,29 @@ class R2UploaderSettingTab extends PluginSettingTab {
     const { containerEl } = this;
 
     containerEl.empty();
-    containerEl.createEl('h1', { text: 'Upload Settings' });
+    containerEl.createEl('h1', { text: this.plugin.t('uploadSettings') });
+
+    // Language selection
+    new Setting(containerEl)
+      .setName(this.plugin.t('language'))
+      .setDesc(this.plugin.t('languageDesc'))
+      .addDropdown(dropdown =>
+        dropdown
+          .addOption('en', 'English')
+          .addOption('ko', '한국어')
+          .setValue(this.plugin.settings.language)
+          .onChange(async value => {
+            this.plugin.settings.language = value as Language;
+            await this.plugin.saveSettings();
+            // Refresh settings UI to show new language
+            this.display();
+          })
+      );
 
     // 일반 업로드 설정
     new Setting(containerEl)
-      .setName('Use image name as Alt Text')
-      .setDesc(
-        "Whether to use image name as Alt Text with '-' and '_' replaced with space."
-      )
+      .setName(this.plugin.t('useImageNameAsAltText'))
+      .setDesc(this.plugin.t('useImageNameAsAltTextDesc'))
       .addToggle(toggle =>
         toggle
           .setValue(this.plugin.settings.useImageNameAsAltText)
@@ -1189,8 +1448,8 @@ class R2UploaderSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('Update original document')
-      .setDesc('Whether to replace internal link with store link.')
+      .setName(this.plugin.t('updateOriginalDocument'))
+      .setDesc(this.plugin.t('updateOriginalDocumentDesc'))
       .addToggle(toggle =>
         toggle
           .setValue(this.plugin.settings.updateOriginalDocument)
@@ -1201,10 +1460,8 @@ class R2UploaderSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('Ignore note properties')
-      .setDesc(
-        "Where to ignore note properties when copying to clipboard. This won't affect original note."
-      )
+      .setName(this.plugin.t('ignoreNoteProperties'))
+      .setDesc(this.plugin.t('ignoreNotePropertiesDesc'))
       .addToggle(toggle =>
         toggle
           .setValue(this.plugin.settings.ignoreNoteProperties)
@@ -1215,10 +1472,8 @@ class R2UploaderSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('Show progress modal')
-      .setDesc(
-        'Show a modal dialog with detailed progress when uploading images (auto close in 3s). If disabled, a simpler status indicator will be used.'
-      )
+      .setName(this.plugin.t('showProgressModal'))
+      .setDesc(this.plugin.t('showProgressModalDesc'))
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.showProgressModal).onChange(async value => {
           this.plugin.settings.showProgressModal = value;
@@ -1227,8 +1482,8 @@ class R2UploaderSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('Confirm before upload')
-      .setDesc('Show confirmation dialog before uploading images.')
+      .setName(this.plugin.t('confirmBeforeUpload'))
+      .setDesc(this.plugin.t('confirmBeforeUploadDesc'))
       .addToggle(toggle =>
         toggle
           .setValue(this.plugin.settings.confirmBeforeUpload)
@@ -1239,8 +1494,8 @@ class R2UploaderSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('Download external images')
-      .setDesc('Download external images (http/https URLs) and upload them to R2. When enabled, external image URLs will be downloaded and replaced with R2 URLs.')
+      .setName(this.plugin.t('downloadExternalImages'))
+      .setDesc(this.plugin.t('downloadExternalImagesDesc'))
       .addToggle(toggle =>
         toggle
           .setValue(this.plugin.settings.downloadExternalImages)
@@ -1251,11 +1506,11 @@ class R2UploaderSettingTab extends PluginSettingTab {
       );
 
     // CloudFlare R2 설정
-    containerEl.createEl('h2', { text: 'CloudFlare R2 Settings' });
+    containerEl.createEl('h2', { text: this.plugin.t('cloudflareR2Settings') });
 
     new Setting(containerEl)
-      .setName('Cloudflare R2 Access Key ID')
-      .setDesc('Your Cloudflare R2 access key ID')
+      .setName(this.plugin.t('cloudflareR2AccessKeyID'))
+      .setDesc(this.plugin.t('cloudflareR2AccessKeyIDDesc'))
       .addText(text =>
         text
           .setPlaceholder('Enter your access key ID')
@@ -1267,8 +1522,8 @@ class R2UploaderSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('Cloudflare R2 Secret Access Key')
-      .setDesc('Your Cloudflare R2 secret access key')
+      .setName(this.plugin.t('cloudflareR2SecretAccessKey'))
+      .setDesc(this.plugin.t('cloudflareR2SecretAccessKeyDesc'))
       .addText(text =>
         text
           .setPlaceholder('Enter your secret access key')
@@ -1280,10 +1535,8 @@ class R2UploaderSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('Cloudflare R2 Endpoint')
-      .setDesc(
-        'Your Cloudflare R2 endpoint URL (e.g., https://account-id.r2.cloudflarestorage.com)'
-      )
+      .setName(this.plugin.t('cloudflareR2Endpoint'))
+      .setDesc(this.plugin.t('cloudflareR2EndpointDesc'))
       .addText(text =>
         text
           .setPlaceholder('Enter your R2 endpoint')
@@ -1295,8 +1548,8 @@ class R2UploaderSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('Cloudflare R2 Bucket Name')
-      .setDesc('Your Cloudflare R2 bucket name')
+      .setName(this.plugin.t('cloudflareR2BucketName'))
+      .setDesc(this.plugin.t('cloudflareR2BucketNameDesc'))
       .addText(text =>
         text
           .setPlaceholder('Enter your bucket name')
@@ -1308,10 +1561,8 @@ class R2UploaderSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('Target Path')
-      .setDesc(
-        'The path to store image.\\nSupport {year} {mon} {day} {random} {filename} vars. For example, /{year}/{mon}/{day}/{filename} with uploading pic.jpg, it will store as /2023/06/08/pic.jpg.'
-      )
+      .setName(this.plugin.t('targetPath'))
+      .setDesc(this.plugin.t('targetPathDesc'))
       .addText(text =>
         text
           .setPlaceholder('Enter path')
@@ -1323,10 +1574,8 @@ class R2UploaderSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('R2.dev URL, Custom Domain Name')
-      .setDesc(
-        'You can use the R2.dev URL such as https://pub-xxxx.r2.dev here, or custom domain. If the custom domain name is example.com, you can use https://example.com/pic.jpg to access pic.img.'
-      )
+      .setName(this.plugin.t('r2devUrlCustomDomain'))
+      .setDesc(this.plugin.t('r2devUrlCustomDomainDesc'))
       .addText(text =>
         text
           .setPlaceholder('Enter domain name')
