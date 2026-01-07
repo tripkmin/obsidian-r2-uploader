@@ -14,6 +14,9 @@ import {
   TAbstractFile,
   Menu,
 } from 'obsidian';
+import * as https from 'https';
+import * as http from 'http';
+import { URL } from 'url';
 import { R2Uploader, R2Setting } from './src/uploader/r2Uploader';
 import ImageTagProcessor, { ImageTag } from './src/uploader/imageTagProcessor';
 
@@ -57,6 +60,7 @@ interface R2UploaderSettings {
   ignoreNoteProperties: boolean;
   showProgressModal: boolean;
   confirmBeforeUpload: boolean;
+  downloadExternalImages: boolean;
 }
 
 const DEFAULT_SETTINGS: R2UploaderSettings = {
@@ -74,6 +78,7 @@ const DEFAULT_SETTINGS: R2UploaderSettings = {
   ignoreNoteProperties: true,
   showProgressModal: true,
   confirmBeforeUpload: true,
+  downloadExternalImages: false,
 };
 
 export default class R2UploaderPlugin extends Plugin {
@@ -592,6 +597,133 @@ export default class R2UploaderPlugin extends Plugin {
   }
 
   /**
+   * Download external image from URL and convert to File object
+   * Uses Node.js https/http modules to avoid CORS issues in Electron
+   */
+  private async downloadExternalImage(url: string): Promise<File | null> {
+    return new Promise((resolve, reject) => {
+      try {
+        new Notice(`Downloading external image: ${url.substring(0, 50)}...`);
+        
+        const urlObj = new URL(url);
+        const isHttps = urlObj.protocol === 'https:';
+        const httpModule = isHttps ? https : http;
+        
+        const options = {
+          hostname: urlObj.hostname,
+          port: urlObj.port || (isHttps ? 443 : 80),
+          path: urlObj.pathname + urlObj.search,
+          method: 'GET',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          },
+          timeout: 60000, // 60초 타임아웃
+        };
+        
+        const chunks: Buffer[] = [];
+        let contentType = '';
+        let statusCode = 0;
+        let statusMessage = '';
+        
+        const req = httpModule.request(options, (res) => {
+          statusCode = res.statusCode || 0;
+          statusMessage = res.statusMessage || '';
+          
+          if (statusCode < 200 || statusCode >= 300) {
+            reject(new Error(`HTTP ${statusCode}: ${statusMessage}`));
+            return;
+          }
+          
+          contentType = res.headers['content-type'] || '';
+          
+          // Check if it's actually an image
+          if (!contentType.startsWith('image/') && !contentType.startsWith('video/')) {
+            reject(new Error(`Not an image/video: ${contentType}`));
+            return;
+          }
+          
+          // Check content-length for size limit
+          const contentLength = res.headers['content-length'];
+          const maxSize = 50 * 1024 * 1024; // 50MB
+          if (contentLength && parseInt(contentLength) > maxSize) {
+            reject(new Error(`File too large: ${(parseInt(contentLength) / 1024 / 1024).toFixed(2)}MB (max 50MB)`));
+            return;
+          }
+          
+          res.on('data', (chunk: Buffer) => {
+            chunks.push(chunk);
+            
+            // Check accumulated size
+            const totalSize = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+            if (totalSize > maxSize) {
+              req.destroy();
+              reject(new Error(`File too large: ${(totalSize / 1024 / 1024).toFixed(2)}MB (max 50MB)`));
+            }
+          });
+          
+          res.on('end', () => {
+            try {
+              const buffer = Buffer.concat(chunks);
+              
+              // Get file extension from URL or Content-Type
+              const urlPath = urlObj.pathname;
+              let extension = urlPath.split('.').pop()?.toLowerCase() || '';
+              
+              // Remove query parameters from extension
+              extension = extension.split('?')[0].split('#')[0];
+              
+              // If no extension, try to get from Content-Type
+              if (!extension || extension.length > 5) {
+                const mimeToExt: Record<string, string> = {
+                  'image/jpeg': 'jpg',
+                  'image/jpg': 'jpg',
+                  'image/png': 'png',
+                  'image/gif': 'gif',
+                  'image/webp': 'webp',
+                  'image/svg+xml': 'svg',
+                  'image/bmp': 'bmp',
+                  'image/tiff': 'tiff',
+                  'video/mp4': 'mp4',
+                  'video/webm': 'webm',
+                };
+                extension = mimeToExt[contentType] || 'png';
+              }
+              
+              // Generate filename from URL
+              const urlFileName = urlPath.split('/').pop() || 'image';
+              const cleanFileName = urlFileName.split('?')[0].split('#')[0];
+              const fileName = cleanFileName && cleanFileName.includes('.') 
+                ? cleanFileName 
+                : `downloaded_image_${Date.now()}.${extension}`;
+              
+              // Create File object from Buffer
+              const blob = new Blob([buffer], { type: contentType });
+              const file = new File([blob], fileName, { type: contentType });
+              
+              resolve(file);
+            } catch (error: any) {
+              reject(new Error(`Failed to create file: ${error.message}`));
+            }
+          });
+        });
+        
+        req.on('error', (error: Error) => {
+          reject(new Error(`Network error: ${error.message}`));
+        });
+        
+        req.on('timeout', () => {
+          req.destroy();
+          reject(new Error('Download timeout (60s)'));
+        });
+        
+        req.end();
+      } catch (error: any) {
+        reject(new Error(`Failed to download image: ${error.message}`));
+      }
+    });
+  }
+
+  /**
    * Upload local images referenced in the given markdown files and update them in-place.
    */
   private async publishSelectedFilesToR2(files: TFile[]): Promise<void> {
@@ -641,18 +773,22 @@ export default class R2UploaderPlugin extends Plugin {
       return { updatedContent: content, successCount: 0, errorCount: 0 };
     }
 
-    // Filter local images only
+    // Separate local and external images
     const localImageTags = imageTags.filter(tag =>
       ImageTagProcessor.isLocalImage(tag.imagePath)
     );
+    const externalImageTags = this.settings.downloadExternalImages
+      ? imageTags.filter(tag => !ImageTagProcessor.isLocalImage(tag.imagePath))
+      : [];
 
-    if (localImageTags.length === 0) {
-      new Notice(`No local images found in "${fileContext.name}".`);
+    if (localImageTags.length === 0 && externalImageTags.length === 0) {
+      new Notice(`No images found to upload in "${fileContext.name}".`);
       return { updatedContent: content, successCount: 0, errorCount: 0 };
     }
 
+    const totalImages = localImageTags.length + externalImageTags.length;
     new Notice(
-      `Found ${localImageTags.length} local images to upload in "${fileContext.name}".`
+      `Found ${localImageTags.length} local and ${externalImageTags.length} external images to upload in "${fileContext.name}".`
     );
 
     let updatedContent = content;
@@ -728,6 +864,36 @@ export default class R2UploaderPlugin extends Plugin {
       } catch (error) {
         new Notice(
           `Failed to upload ${imageTag.imagePath} in "${fileContext.name}": ${error.message}`
+        );
+        errorCount++;
+      }
+    }
+
+    // Process external images if enabled
+    for (const imageTag of externalImageTags) {
+      try {
+        // Download external image
+        const file = await this.downloadExternalImage(imageTag.imagePath);
+        if (!file) {
+          errorCount++;
+          continue;
+        }
+
+        // Upload to R2
+        const url = await this.uploadImage(file);
+        if (url) {
+          // Collect replacement information
+          replacements.push({
+            originalText: imageTag.originalText,
+            newUrl: url,
+          });
+          successCount++;
+        } else {
+          errorCount++;
+        }
+      } catch (error) {
+        new Notice(
+          `Failed to download/upload external image ${imageTag.imagePath} in "${fileContext.name}": ${error.message}`
         );
         errorCount++;
       }
@@ -1068,6 +1234,18 @@ class R2UploaderSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.confirmBeforeUpload)
           .onChange(async value => {
             this.plugin.settings.confirmBeforeUpload = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName('Download external images')
+      .setDesc('Download external images (http/https URLs) and upload them to R2. When enabled, external image URLs will be downloaded and replaced with R2 URLs.')
+      .addToggle(toggle =>
+        toggle
+          .setValue(this.plugin.settings.downloadExternalImages)
+          .onChange(async value => {
+            this.plugin.settings.downloadExternalImages = value;
             await this.plugin.saveSettings();
           })
       );
